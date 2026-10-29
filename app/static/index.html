@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Developer Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <form id="search-form" class="search" autocomplete="off">
+      <label for="username" class="sr">GitHub username</label>
+      <span class="at">github.com/</span>
+      <input id="username" name="username" placeholder="username" spellcheck="false" required>
+      <button type="submit" class="btn primary">Load profile</button>
+      <button type="button" id="refresh" class="btn" title="Bypass the cache and re-fetch from GitHub">Refresh</button>
+    </form>
+    <div class="topbar-right">
+      <span id="cache-pill" class="pill" hidden></span>
+      <button id="theme" class="btn icon" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+    </div>
+  </header>
+
+  <main id="app">
+    <div id="notice" class="notice" role="status" hidden></div>
+
+    <section id="empty" class="empty">
+      <h1>Your GitHub, as a portfolio.</h1>
+      <p>Enter a GitHub username to build the dashboard: contribution heatmap, repo cards, language mix, and a tech-stack match against any job description.</p>
+    </section>
+
+    <div id="dashboard" hidden>
+      <section class="hero" aria-label="Profile">
+        <img id="avatar" class="avatar" alt="" width="104" height="104">
+        <div class="hero-main">
+          <h1 id="name"></h1>
+          <p class="handle"><a id="handle" target="_blank" rel="noopener"></a><span id="where"></span></p>
+          <p id="bio" class="bio"></p>
+          <dl class="facts">
+            <div><dt>Followers</dt><dd id="s-followers">0</dd></div>
+            <div><dt>Total stars</dt><dd id="s-stars">0</dd></div>
+            <div><dt>Original repos</dt><dd id="s-repos">0</dd></div>
+            <div><dt>Forks received</dt><dd id="s-forks">0</dd></div>
+          </dl>
+        </div>
+        <a href="#vibe" id="badge" class="badge" data-tone="none" aria-label="Tech stack match">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-bg" cx="60" cy="60" r="52"/>
+            <circle id="ring" class="ring" cx="60" cy="60" r="52" pathLength="100"/>
+          </svg>
+          <span id="badge-value">–</span>
+          <span id="badge-label">Run the vibe check</span>
+        </a>
+      </section>
+
+      <section class="card heat" aria-label="Contribution graph">
+        <div class="card-head">
+          <h2>Contributions</h2>
+          <p id="heat-sub" class="muted"></p>
+        </div>
+        <div class="streaks">
+          <div><b id="st-current">0</b><span>day streak now</span></div>
+          <div><b id="st-longest">0</b><span>longest streak</span></div>
+          <div><b id="st-total">0</b><span>contributions</span></div>
+          <div><b id="st-active">0</b><span>active days</span></div>
+          <div><b id="st-busiest">–</b><span id="st-busiest-label">busiest day</span></div>
+        </div>
+        <div class="heat-scroll"><div id="heatmap" class="heatmap" role="img" aria-label="Contribution heatmap"></div></div>
+        <div class="legend"><span>Less</span><i data-l="0"></i><i data-l="1"></i><i data-l="2"></i><i data-l="3"></i><i data-l="4"></i><span>More</span></div>
+      </section>
+
+      <section id="vibe" class="card vibe" aria-label="Tech stack compatibility">
+        <div class="card-head">
+          <h2>Tech stack compatibility</h2>
+          <p class="muted">Paste a job description. The server compares its keywords with the languages and topics in your cached repos.</p>
+        </div>
+        <div class="vibe-grid">
+          <div>
+            <label for="jd" class="sr">Job description</label>
+            <textarea id="jd" rows="9" placeholder="Paste the job description here…"></textarea>
+            <div class="row">
+              <button id="run-match" class="btn primary">Check match</button>
+              <span id="match-msg" class="muted"></span>
+            </div>
+          </div>
+          <div id="match-result" class="match-result" hidden>
+            <p id="match-headline" class="match-headline"></p>
+            <div class="chips-group"><h3>Covered</h3><div id="chips-matched" class="chips"></div></div>
+            <div class="chips-group"><h3>Partly covered</h3><div id="chips-partial" class="chips"></div></div>
+            <div class="chips-group"><h3>Not found in your repos</h3><div id="chips-missing" class="chips"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="trio">
+        <div class="card langs">
+          <div class="card-head"><h2>Top languages</h2></div>
+          <div class="pie-wrap">
+            <svg id="pie" viewBox="-60 -60 120 120" role="img" aria-label="Top languages pie chart"></svg>
+            <ul id="lang-list" class="lang-list"></ul>
+          </div>
+          <p id="lang-empty" class="muted" hidden>No language data yet.</p>
+        </div>
+
+        <div class="card coach">
+          <div class="card-head">
+            <h2>Profile coach</h2>
+            <span id="coach-mode" class="pill soft"></span>
+          </div>
+          <p id="coach-bio" class="coach-bio"></p>
+          <ul id="coach-tips" class="tips"></ul>
+        </div>
+
+        <div class="card bot">
+          <div class="card-head"><h2>Ask DevBot</h2><span id="bot-mode" class="pill soft"></span></div>
+          <div id="bot-log" class="bot-log" aria-live="polite"></div>
+          <div class="suggest" id="bot-suggest">
+            <button type="button">What does this developer work with?</button>
+            <button type="button">Show their best project</button>
+            <button type="button">How consistent are they?</button>
+          </div>
+          <form id="bot-form" class="bot-form" autocomplete="off">
+            <label for="bot-input" class="sr">Your question</label>
+            <input id="bot-input" placeholder="Ask about this profile…" maxlength="500">
+            <button class="btn primary" type="submit">Ask</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="repos-section" aria-label="Repositories">
+        <div class="repos-head">
+          <h2>Repositories <span id="repo-count" class="muted"></span></h2>
+          <div class="filters">
+            <label class="sr" for="f-q">Search repositories</label>
+            <input id="f-q" type="search" placeholder="Search repos or topics">
+            <label class="sr" for="f-lang">Language</label>
+            <select id="f-lang"><option value="">All languages</option></select>
+            <label class="sr" for="f-sort">Sort</label>
+            <select id="f-sort">
+              <option value="stars">Most stars</option>
+              <option value="forks">Most forks</option>
+              <option value="updated">Recently updated</option>
+              <option value="name">Name</option>
+            </select>
+            <label class="check"><input type="checkbox" id="f-forks"> Include forks</label>
+          </div>
+        </div>
+        <div id="repo-grid" class="repo-grid"></div>
+        <p id="repo-empty" class="muted" hidden>No repositories match these filters.</p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="foot muted" id="foot"></footer>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
